@@ -3,6 +3,10 @@ const fs  		= require("fs");
 const {cv}      = require("opencv-wasm");
 const {join} 	= require('path');
 const {
+	HAVE_GPU,
+	SPLIT_KEYWORD
+} 				= require("./config.js")
+const {
 	cvRead,
 	cvWrite,
 	HSVtoRGB,
@@ -45,7 +49,7 @@ class Detector {
 				})
 				.map((value => HSVtoRGB(value)))
 				.shuffle();
-			
+
 			predictions.forEach(pred => {
 				this.classNames.forEach((v, k) => {if (v.trim() === pred.name.trim()) clsIdx = k;});
 				const [x, y, w, h] = [pred.box.x, pred.box.y, pred.box.w, pred.box.h ];
@@ -89,7 +93,7 @@ class Detector {
 	async detect(imagePath, savePath = null) {
 		try {
 			const predictions = this._preprocess(imagePath);
-			let images = imagePath.split(' ');
+			let images = imagePath.split('\r\n');
 
 			for(let i = 0; i < images.length; ++i) {
 				const image = await this.drawBox(images[i], predictions[i]);
@@ -132,10 +136,13 @@ class Detector {
 		: results.trim().split('\n');
 
 		let indices = [];
-		resultsArr = resultsArr.slice(1, results.length-1);
-		
+
+		resultsArr = HAVE_GPU
+		? resultsArr.slice(1, resultsArr.length - 1)
+		: resultsArr.slice(3, resultsArr.length - 1);
+
 		for (let i = 0; i < resultsArr.length; ++i) {
-			if (resultsArr[i].search('Enter') >= 0)
+			if (resultsArr[i].search(SPLIT_KEYWORD) >= 0)
 				indices.push(i);
 		}
 
@@ -155,7 +162,9 @@ class Detector {
 	_parse(results) {
 		let detections = []
 		let objConstruct = (data) => {
-	
+			if (data.length < 2)
+				throw EvalError(`Expected length of data: 2, got ${data.length}: ${data}`);
+
 			let d1 = data[0].split(': ');
 			let detection = {
 				name: null,
