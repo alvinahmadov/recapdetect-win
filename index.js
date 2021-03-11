@@ -17,7 +17,7 @@ const namesFile = join(dirname, './data/coco.data');
 			images.forEach((v, i) => {
 				imagesPath += join(dirname, v);
 				if (i < images.length - 1)
-					imagesPath += ' ';
+					imagesPath += '\r\n';
 			})
 			imagesPath = imagesPath.trim();
 		}
