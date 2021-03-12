@@ -91,11 +91,13 @@ class Detector {
 	 * @param {string|null} savePath
 	 * */
 	async detect(imagePath, savePath = null) {
+		let predMap = new Map();
 		try {
 			const predictions = this._preprocess(imagePath);
 			let images = imagePath.split('\r\n');
 
 			for(let i = 0; i < images.length; ++i) {
+				predMap.set(images[i].trim(), predictions[i]);
 				const image = await this.drawBox(images[i], predictions[i]);
 				if (this.debug) {
 					console.log('Predictions:');
@@ -117,6 +119,7 @@ class Detector {
 				image.delete();
 				fs.unlink('predictions.jpg', () => {})
 			}
+		return predMap;
 		} catch (e) {
 			console.error(e);
 		}
